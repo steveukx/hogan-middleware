@@ -15,6 +15,7 @@ function TemplateEngine(settings) {
          }
       });
    }
+   return TemplateEngine;
 }
 
 TemplateEngine.__settings = {

@@ -1,6 +1,6 @@
 {
    "name": "hogan-middleware",
-   "version": "0.0.2",
+   "version": "0.0.3",
    "description": "Middleware component to use Hogan.js mustache templates as views in an Express server",
    "author": "Steve King <steve@mydev.co>",
    "contributors": [ { "name": "Steve King", "email": "steve@mydev.co" } ],
