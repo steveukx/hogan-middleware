@@ -4,8 +4,22 @@ var ReadDir = require('readdir');
 var Path = require('path');
 var FS = require('fs');
 
-function TemplateEngine() {
+function TemplateEngine(settings) {
+   if (settings) {
+      Object.keys(settings).forEach(function (key) {
+         if (TemplateEngine.__settings.hasOwnProperty(key)) {
+            TemplateEngine.__settings[key] = settings[key];
+         }
+         else {
+            throw "hogan-middleware: unknown setting, attempted to set value for " + key;
+         }
+      });
+   }
 }
+
+TemplateEngine.__settings = {
+   filter: ['**.mustache']
+};
 
 /**
  * All active directory file system watches
@@ -103,7 +117,7 @@ TemplateEngine._refreshTemplates = function(templatesPath) {
    TemplateEngine._refreshWatches(templatesPath);
 
    TemplateEngine.__templates = {};
-   ReadDir.readSync(templatesPath, ['**.mustache'], ReadDir.ABSOLUTE_PATHS)
+   ReadDir.readSync(templatesPath, TemplateEngine.__settings.filter, ReadDir.ABSOLUTE_PATHS)
           .forEach(TemplateEngine._storeTemplate, TemplateEngine);
    console.log('Refreshing templates complete');
 };
