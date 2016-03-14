@@ -1,6 +1,6 @@
 {
    "name": "hogan-middleware",
-   "version": "0.0.3",
+   "version": "0.1.0",
    "description": "Middleware component to use Hogan.js mustache templates as views in an Express server",
    "author": "Steve King <steve@mydev.co>",
    "contributors": [ { "name": "Steve King", "email": "steve@mydev.co" } ],
@@ -10,6 +10,7 @@
    "engines": { "node": ">= 0.8.0" },
    "dependencies":{
       "hogan.js":"",
-      "readdir":"*"
+      "readdir":"*",
+      "debug": "*"
    }
 }

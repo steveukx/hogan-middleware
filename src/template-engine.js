@@ -3,6 +3,7 @@ var Hogan = require('hogan.js');
 var ReadDir = require('readdir');
 var Path = require('path');
 var FS = require('fs');
+var debug = require('debug')('hogan');
 
 function TemplateEngine(settings) {
    if (settings) {
@@ -67,7 +68,7 @@ TemplateEngine._storeTemplate = function(templatePath) {
    var templateName = Path.basename(templatePath, Path.extname(templatePath));
    TemplateEngine.__templates[templateName] = Hogan.compile(FS.readFileSync(templatePath, 'utf-8'));
 
-   console.log('Stored template', templateName);
+   debug('Stored template %s', templateName);
 };
 
 /**
@@ -90,7 +91,7 @@ TemplateEngine._getTemplates = function(templatesPath) {
  * @param {String} templatesPath
  */
 TemplateEngine._refreshWatches = function(templatesPath) {
-   console.log('Refreshing watched directories');
+   debug('Refreshing watched directories');
 
    // Remove any existing watches
    TemplateEngine._watches.splice(0).forEach(function(watch) {
@@ -99,7 +100,7 @@ TemplateEngine._refreshWatches = function(templatesPath) {
 
    ReadDir.readSync(templatesPath, ['**/'], ReadDir.ABSOLUTE_PATHS + ReadDir.INCLUDE_DIRECTORIES)
       .forEach(function (path) {
-         console.log(' [WATCH] ', path);
+         debug(' [WATCH] %s', path);
          TemplateEngine._watches.push(
             FS.watch(path, {persistent:false}, TemplateEngine._refreshTemplates.bind(TemplateEngine, templatesPath))
          );
@@ -113,14 +114,14 @@ TemplateEngine._refreshWatches = function(templatesPath) {
  * @param {String} templatesPath
  */
 TemplateEngine._refreshTemplates = function(templatesPath) {
-   console.log('Refreshing templates for', templatesPath);
+   debug('Refreshing templates for %s', templatesPath);
 
    TemplateEngine._refreshWatches(templatesPath);
 
    TemplateEngine.__templates = {};
    ReadDir.readSync(templatesPath, TemplateEngine.__settings.filter, ReadDir.ABSOLUTE_PATHS)
           .forEach(TemplateEngine._storeTemplate, TemplateEngine);
-   console.log('Refreshing templates complete');
+   debug('Refreshing templates complete');
 };
 
 module.exports = TemplateEngine;
