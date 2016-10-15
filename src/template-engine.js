@@ -123,18 +123,18 @@ TemplateEngine._refreshTemplates = function(templateRootPath) {
    var settings = TemplateEngine.__settings;
 
    findTemplates(templateRootPath, settings.filter)
-         .map(readTemplate)
-         .reduce(function (templates, template) {
+      .map(readTemplate)
+      .reduce(function (templates, template) {
 
-            if (settings.flatten) {
-               templates[template.name] = template.content;
-            }
+         if (settings.flatten) {
+            templates[Path.basename(template.path)] = template.content;
+         }
 
-            templates[template.relative] = template.content;
+         templates[Path.relative(templateRootPath, template.path)] = template.content;
 
-            return templates;
+         return templates;
 
-         }, TemplateEngine.__templates = {});
+      }, TemplateEngine.__templates = {});
 
    debug('Refreshing templates complete');
 };
@@ -146,7 +146,7 @@ function findTemplates (rootPath, filter) {
 function readTemplate (absolutePath) {
    return {
       content: Hogan.compile(FS.readFileSync(absolutePath, 'utf-8')),
-      name: stripFileExtension(absolutePath)
+      path: stripFileExtension(absolutePath)
    };
 }
 
