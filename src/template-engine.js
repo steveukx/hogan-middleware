@@ -20,7 +20,9 @@ function TemplateEngine(settings) {
 }
 
 TemplateEngine.__settings = {
-   filter: ['**.mustache']
+   filter: ['**.mustache'],
+   flatten: true,
+   watch: true
 };
 
 /**
@@ -59,19 +61,6 @@ TemplateEngine.__express = function(templatePath, templateData, next) {
 };
 
 /**
- * Stores an individual template based on the supplied path, the name of the template is the file's basename without
- * the extension.
- *
- * @param {String} templatePath
- */
-TemplateEngine._storeTemplate = function(templatePath) {
-   var templateName = Path.basename(templatePath, Path.extname(templatePath));
-   TemplateEngine.__templates[templateName] = Hogan.compile(FS.readFileSync(templatePath, 'utf-8'));
-
-   debug('Stored template %s', templateName);
-};
-
-/**
  * Gets all templates, when the template path hasn't yet been scanned it will be read synchronously to ensure there are
  * always templates available, the template directory is then watched to allow templates to be changed while the server
  * is still running.
@@ -81,7 +70,15 @@ TemplateEngine._storeTemplate = function(templatePath) {
 TemplateEngine._getTemplates = function(templatesPath) {
    if(!TemplateEngine.__templates) {
       TemplateEngine._refreshTemplates(templatesPath);
-      FS.watch(templatesPath, {persistent: false}, TemplateEngine._refreshTemplates.bind(TemplateEngine, templatesPath));
+      FS.watch(
+         templatesPath,
+         {
+            persistent: false
+         },
+         function refreshTemplates (a,b,c) {
+            return TemplateEngine._refreshTemplates(templatesPath);
+         }
+      );
    }
    return TemplateEngine.__templates;
 };
@@ -91,6 +88,11 @@ TemplateEngine._getTemplates = function(templatesPath) {
  * @param {String} templatesPath
  */
 TemplateEngine._refreshWatches = function(templatesPath) {
+   if (TemplateEngine.__settings.watch === false) {
+      debug('Refreshing watched directories has been disabled.');
+      return;
+   }
+
    debug('Refreshing watched directories');
 
    // Remove any existing watches
@@ -111,17 +113,46 @@ TemplateEngine._refreshWatches = function(templatesPath) {
  * Reads all templates in the supplied path (synchronously). Can be called at any time, and is used as the handler for
  * the file system watch of the templates directory.
  *
- * @param {String} templatesPath
+ * @param {String} templateRootPath
  */
-TemplateEngine._refreshTemplates = function(templatesPath) {
-   debug('Refreshing templates for %s', templatesPath);
+TemplateEngine._refreshTemplates = function(templateRootPath) {
+   debug('Refreshing templates for %s', templateRootPath);
 
-   TemplateEngine._refreshWatches(templatesPath);
+   TemplateEngine._refreshWatches(templateRootPath);
 
-   TemplateEngine.__templates = {};
-   ReadDir.readSync(templatesPath, TemplateEngine.__settings.filter, ReadDir.ABSOLUTE_PATHS)
-          .forEach(TemplateEngine._storeTemplate, TemplateEngine);
+   var settings = TemplateEngine.__settings;
+
+   findTemplates(templateRootPath, settings.filter)
+         .map(readTemplate)
+         .reduce(function (templates, template) {
+
+            if (settings.flatten) {
+               templates[template.name] = template.content;
+            }
+
+            templates[template.relative] = template.content;
+
+            return templates;
+
+         }, TemplateEngine.__templates = {});
+
    debug('Refreshing templates complete');
 };
+
+function findTemplates (rootPath, filter) {
+   return ReadDir.readSync(rootPath, filter, ReadDir.ABSOLUTE_PATHS);
+}
+
+function readTemplate (absolutePath) {
+   return {
+      content: Hogan.compile(FS.readFileSync(absolutePath, 'utf-8')),
+      name: stripFileExtension(absolutePath)
+   };
+}
+
+function stripFileExtension (input) {
+   return input.replace(/(.+)\.[a-z]+/, '$1');
+}
+
 
 module.exports = TemplateEngine;

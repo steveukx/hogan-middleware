@@ -29,6 +29,28 @@ In this case there is a file named `home.mustache` in the `views` directory that
         <h1>{{SiteName}}</h1>
       </body>
     </html>
+    
+Configuration
+=============
+
+Optional functionality in the middleware can be set before passing it into express:
+
+```
+var hoganMiddleware = require('hogan-middleware');
+hoganMiddleware({
+   filter: ['**.mustache'],   // override the default file extension searched for
+                              // default is just the mustache file extension
+
+   flatten: true,             // make all partials available with just their file name
+                              // rather than the slash delimited path. default is enabled
+
+   watch: true                // set to false to remove the live updating watchers -
+                              // can be useful for running in production where files
+                              // will not be regularly changing.
+});
+
+app.engine('mustache', hoganMiddleware.__express);
+```
 
 Partial Templates
 =================
@@ -43,7 +65,10 @@ to it for use as partials, so could in turn have `{{>b}}` to include a nested pa
 To allow for a tidy source tree, templates can be in any number of sub-directories under the main views directory,
 they are all made available for use as partials without any path identifier.
 
-Note - multiple templates with the same name but in different directories will overwrite each other.
+Note - multiple templates with the same name but in different directories will overwrite each other. Set the
+`flatten` configuration option to false to always use the relative path as the name of the partials
+(ie: `{{>app/header}}` instead of just `{{>header}}`). Whether the `flatten` option is enabled or not, the relative
+path name will always be available.
 
 Note - don't include the same template as a partial inside itself.
 
